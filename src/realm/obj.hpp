@@ -55,6 +55,8 @@ class ConstLnkLst;
 using LnkLstPtr = std::unique_ptr<LnkLst>;
 using ConstLnkLstPtr = std::unique_ptr<const LnkLst>;
 
+class Dictionary;
+
 // 'Object' would have been a better name, but it clashes with a class in ObjectStore
 class ConstObj {
 public:
@@ -134,6 +136,8 @@ public:
     ConstLstBasePtr get_listbase_ptr(ColKey col_key) const;
 
     size_t get_link_count(ColKey col_key) const;
+
+    Dictionary get_dictionary(ColKey col_key) const;
 
     bool is_null(ColKey col_key) const;
     bool is_null(StringData col_name) const
@@ -333,6 +337,7 @@ private:
     friend class Lst;
     friend class LnkLst;
     friend class Table;
+    friend class Dictionary;
 
     Obj(const ConstObj& other)
         : ConstObj(other)
@@ -348,6 +353,14 @@ private:
     void bump_both_versions();
     template <class T>
     void do_set_null(ColKey col_key);
+
+    // Dictionary support
+    void set_dict_ref(ColKey col_key, size_t ndx, ref_type value);
+    ref_type get_dict_ref(ColKey col_key, size_t ndx) const;
+    size_t get_row_ndx() const
+    {
+        return m_row_ndx;
+    }
 
     void set_int(ColKey col_key, int64_t value);
     void add_backlink(ColKey backlink_col, ObjKey origin_key);
