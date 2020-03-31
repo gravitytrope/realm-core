@@ -639,38 +639,39 @@ def doLinuxCrossCompile(String target, String buildType, String emulator = null)
         node('docker') {
             getArchive()
             docker.build("realm-core-crosscompiling:${target}", "-f ${target}.Dockerfile .").inside {
-                dir('build') {
-                    sh """
-                        cmake -GNinja \
-                              -DREALM_SKIP_SHARED_LIB=ON \
-                              -DCMAKE_TOOLCHAIN_FILE=$WORKSPACE/tools/cmake/${target}.toolchain.cmake \
-                              -DCMAKE_BUILD_TYPE=${buildType} \
-                              -DREALM_NO_TESTS=${emulator ? 'OFF' : 'ON'} \
-                              -DCPACK_SYSTEM_NAME=Linux-${target} \
-                              ..
-                        cmake --build .
-                    """
-                    if (emulator != null) {
-                        try {
+                try {
+                    dir('build-dir') {
+                        sh """
+                            cmake -GNinja \
+                                -DREALM_SKIP_SHARED_LIB=ON \
+                                -DCMAKE_TOOLCHAIN_FILE=$WORKSPACE/tools/cmake/${target}.toolchain.cmake \
+                                -DCMAKE_BUILD_TYPE=${buildType} \
+                                -DREALM_NO_TESTS=${emulator ? 'OFF' : 'ON'} \
+                                -DCPACK_SYSTEM_NAME=Linux-${target} \
+                                ..
+                        """
+
+                        runAndCollectWarnings(script: "ninja")
+
+                        if (emulator != null) {
                             def environment = environment()
-                            environment << 'UNITTEST_FILTER=-Th'
+                            environment << 'UNITTEST_PROGRESS=1'
                             withEnv(environment) {
                                 sh """
                                     cd test
                                     LD_LIBRARY_PATH=/usr/arm-linux-gnueabihf/lib  UNITTEST_FILTER="- Thread_RobustMutex*"  ${emulator} realm-tests
                                 """
                             }
-                        } finally {
-                            recordTests("Linux-${target}-${buildType}")
-                            deleteDir()
+                        } else {
+                            sh 'cpack'
+                                archiveArtifacts '*.tar.gz'
+                                def stashName = "linux-${target}___${buildType}"
+                                stash includes:"*.tar.gz", name:stashName
+                                publishingStashes << stashName
                         }
-                    } else {
-                        sh 'cpack'
-                        archiveArtifacts '*.tar.gz'
-                        def stashName = "linux-${target}___${buildType}"
-                        stash includes:"*.tar.gz", name:stashName
-                        publishingStashes << stashName
                     }
+                } finally {
+                    recordTests("Linux-${target}-${buildType}")
                 }
             }
         }
