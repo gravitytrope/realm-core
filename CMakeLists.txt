@@ -53,6 +53,7 @@ function(use_faster_linker)
         return()
     endif()
 
+    if (0)
     foreach(LINKER lld gold) # lld > gold > default
         # there is no link equivalent to check_cxx_compiler_flag()
         set(CMAKE_REQUIRED_LINK_OPTIONS "-fuse-ld=${LINKER}")
@@ -64,18 +65,26 @@ function(use_faster_linker)
             return()
         endif()
     endforeach()
+    endif()
 endfunction()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
+    set(REALM_RPI ON)
+endif()
+
 
 # Set global warnings settings
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /D_CRT_SECURE_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wundef -Wshadow")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wundef -Wshadow -D_FILE_OFFSET_BITS=64")
     # TODO: Remove this when fixed
     if(ANDROID)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-uninitialized")
     elseif(${CMAKE_CXX_COMPILER_ID} MATCHES ".*[Cc]lang")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunreachable-code -Wshorten-64-to-32 -Wold-style-cast -Wconditional-uninitialized -Wextra-semi -Wno-nested-anon-types")
+    elseif(REALM_RPI)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
     endif()
 
     # This warning is too agressive. It warns about moves that are not redundant on older

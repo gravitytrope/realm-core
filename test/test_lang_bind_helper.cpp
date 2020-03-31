@@ -96,7 +96,7 @@ void work_on_frozen(TestContext& test_context, TransactionRef frozen)
     CHECK(tv.is_frozen());
 }
 
-TEST(Transactions_Frozen)
+NONCONCURRENT_TEST(Transactions_Frozen)
 {
     SHARED_GROUP_TEST_PATH(path);
     std::unique_ptr<Replication> hist_w(make_in_realm_history(path));
@@ -133,7 +133,7 @@ TEST(Transactions_Frozen)
 }
 
 
-TEST(Transactions_ConcurrentFrozenTableGetByName)
+NONCONCURRENT_TEST(Transactions_ConcurrentFrozenTableGetByName)
 {
     SHARED_GROUP_TEST_PATH(path);
     std::unique_ptr<Replication> hist_w(make_in_realm_history(path));
@@ -156,16 +156,16 @@ TEST(Transactions_ConcurrentFrozenTableGetByName)
             frozen->get_table(table_names[j]);
         }
     };
-    std::thread threads[1000];
-    for (int j = 0; j < 1000; ++j) {
+    std::thread threads[400];
+    for (int j = 0; j < 400; ++j) {
         threads[j] = std::thread(runner, j * 2, j * 2 + 1000);
     }
-    for (int j = 0; j < 1000; ++j)
+    for (int j = 0; j < 400; ++j)
         threads[j].join();
 }
 
 
-TEST(Transactions_ConcurrentFrozenTableGetByKey)
+NONCONCURRENT_TEST(Transactions_ConcurrentFrozenTableGetByKey)
 {
     SHARED_GROUP_TEST_PATH(path);
     std::unique_ptr<Replication> hist_w(make_in_realm_history(path));
@@ -189,16 +189,16 @@ TEST(Transactions_ConcurrentFrozenTableGetByKey)
             CHECK(table->get_key() == table_keys[j]);
         }
     };
-    std::thread threads[1000];
-    for (int j = 0; j < 1000; ++j) {
+    std::thread threads[400];
+    for (int j = 0; j < 400; ++j) {
         threads[j] = std::thread(runner, j * 2, j * 2 + 1000);
     }
-    for (int j = 0; j < 1000; ++j)
+    for (int j = 0; j < 400; ++j)
         threads[j].join();
 }
 
 
-TEST(Transactions_ConcurrentFrozenQueryAndObj)
+NONCONCURRENT_TEST(Transactions_ConcurrentFrozenQueryAndObj)
 {
     SHARED_GROUP_TEST_PATH(path);
     std::unique_ptr<Replication> hist_w(make_in_realm_history(path));
@@ -229,11 +229,11 @@ TEST(Transactions_ConcurrentFrozenQueryAndObj)
             CHECK(obj.get<Int>(col) == j);
         }
     };
-    std::thread threads[500];
-    for (int j = 0; j < 500; ++j) {
+    std::thread threads[100];
+    for (int j = 0; j < 100; ++j) {
         threads[j] = std::thread(runner, j, j + 500);
     }
-    for (int j = 0; j < 500; ++j)
+    for (int j = 0; j < 100; ++j)
         threads[j].join();
 }
 
@@ -3025,7 +3025,7 @@ TEST(LangBindHelper_ImplicitTransactions_MultipleTrackers)
 #if !REALM_ANDROID && !REALM_IOS
 // fork should not be used on android or ios.
 
-TEST(LangBindHelper_ImplicitTransactions_InterProcess)
+NONCONCURRENT_TEST(LangBindHelper_ImplicitTransactions_InterProcess)
 {
     const int write_process_count = 7;
     const int read_process_count = 3;
@@ -3106,7 +3106,6 @@ TEST(LangBindHelper_ImplicitTransactions_InterProcess)
         int status;
         waitpid(readpids[i], &status, 0);
     }
-
 }
 
 #endif // !REALM_ANDROID && !REALM_IOS
